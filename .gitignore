@@ -1,0 +1,7 @@
+*
+!.gitignore
+!RGB2Y.h
+!Makefile
+!test.jpg
+!main.cpp
+!README.md
