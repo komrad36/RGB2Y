@@ -45,28 +45,45 @@ constexpr uint16_t R_WT = static_cast<uint16_t>(64.0 * R_WEIGHT + 0.5);
 #include <future>
 #include <immintrin.h>
 
-constexpr uint16_t mask[] { B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT };
-
 template<const bool last_row_and_col, bool weight>
 void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uint8_t* const __restrict out) {
-	__m256i h2;
+	__m128i h3;
 	if (weight) {
-		__m256i p1 = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt))), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(mask)));
-		__m256i p2 = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1))), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(mask + 1)));
-		__m256i p3 = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 2))), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(mask + 2)));
-
-		__m256i p1p = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 16))), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(mask + 1)));
-		__m256i p2p = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 17))), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(mask + 2)));
-		__m256i p3p = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18))), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(mask)));
-
-		h2 = _mm256_shuffle_epi8(_mm256_permute4x64_epi64(_mm256_packus_epi16(_mm256_srli_epi16(_mm256_add_epi16(p3, _mm256_add_epi16(p1, p2)), 6), _mm256_srli_epi16(_mm256_add_epi16(p3p, _mm256_add_epi16(p1p, p2p)), 6)), 0b11011000), _mm256_setr_epi8(0, 3, 6, 9, 12, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 21, 24, 27, 30, -1, -1, -1, -1, -1));
+		__m256i p1a = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt))), _mm256_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
+		__m256i p1b = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18))), _mm256_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
+		__m256i p2a = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1))), _mm256_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
+		__m256i p2b = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 19))), _mm256_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
+		__m256i p3a = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 2))), _mm256_setr_epi16(R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT));
+		__m256i p3b = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 20))), _mm256_setr_epi16(R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT));
+		__m256i suma = _mm256_add_epi16(p3a, _mm256_add_epi16(p1a, p2a));
+		__m256i sumb = _mm256_add_epi16(p3b, _mm256_add_epi16(p1b, p2b));
+		__m256i scla = _mm256_srli_epi16(suma, 6);
+		__m256i sclb = _mm256_srli_epi16(sumb, 6);
+		__m256i shfta = _mm256_shuffle_epi8(scla, _mm256_setr_epi8(0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+		__m256i shftb = _mm256_shuffle_epi8(sclb, _mm256_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
+		__m256i accum = _mm256_or_si256(shfta, shftb);
+		h3 = _mm_blendv_epi8(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1), _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
 	}
 	else {
-		h2 = _mm256_shuffle_epi8(_mm256_permute4x64_epi64(_mm256_packus_epi16(_mm256_srli_epi16(_mm256_mullo_epi16(_mm256_add_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 2))), _mm256_add_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt))), _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1))))), _mm256_set1_epi16(85)), 8), _mm256_srli_epi16(_mm256_mullo_epi16(_mm256_add_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18))), _mm256_add_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 16))), _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 17))))), _mm256_set1_epi16(85)), 8)), 0b11011000), _mm256_setr_epi8(0, 3, 6, 9, 12, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 21, 24, 27, 30, -1, -1, -1, -1, -1));
+		__m256i p1a = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt)));
+		__m256i p1b = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18)));
+		__m256i p2a = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1)));
+		__m256i p2b = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 19)));
+		__m256i p3a = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 2)));
+		__m256i p3b = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 20)));
+		__m256i suma = _mm256_add_epi16(p3a, _mm256_add_epi16(p1a, p2a));
+		__m256i sumb = _mm256_add_epi16(p3b, _mm256_add_epi16(p1b, p2b));
+		__m256i scla = _mm256_srli_epi16(_mm256_mullo_epi16(suma, _mm256_set1_epi16(85)), 8);
+		__m256i sclb = _mm256_srli_epi16(_mm256_mullo_epi16(sumb, _mm256_set1_epi16(85)), 8);
+		__m256i shfta = _mm256_shuffle_epi8(scla, _mm256_setr_epi8(0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+		__m256i shftb = _mm256_shuffle_epi8(sclb, _mm256_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
+		__m256i accum = _mm256_or_si256(shfta, shftb);
+		h3 = _mm_blendv_epi8(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1), _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
 	}
-	__m128i h3 = _mm_blend_epi16(_mm256_castsi256_si128(h2), _mm256_extracti128_si256(h2, 1), 0b11111000);
 	if (last_row_and_col) {
 		switch (cols_minus_j) {
+		case 12:
+			out[11] = _mm_extract_epi8(h3, 11);
 		case 11:
 			out[10] = _mm_extract_epi8(h3, 10);
 		case 10:
@@ -99,7 +116,7 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 template<bool last_row, bool weight>
 void processRow(const uint8_t* __restrict pt, const int32_t cols, uint8_t* const __restrict out) {
 	int j = 0;
-	for (; j < cols - 11; j += 11, pt += 33) {
+	for (; j < cols - 12; j += 12, pt += 36) {
 		process<false, weight>(pt, cols - j, out + j);
 	}
 	process<last_row, weight>(pt, cols - j, out + j);

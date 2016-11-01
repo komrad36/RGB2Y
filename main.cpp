@@ -63,11 +63,11 @@ void RGB2Y_ref(const uint8_t* __restrict const data, const int32_t cols, const i
 
 int main() {
 	// ------------- Configuration ------------
-	constexpr bool display_image = true;
-	constexpr auto warmups = 100;
-	constexpr auto runs = 2000;
+	constexpr bool display_image = false;
+	constexpr auto warmups = 200;
+	constexpr auto runs = 500;
 	constexpr bool multithread = true;
-	constexpr bool weighted_averaging = true;
+	constexpr bool weighted_averaging = false;
 	constexpr char name[] = "test.jpg";
 	// --------------------------------
 

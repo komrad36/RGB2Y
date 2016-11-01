@@ -5,17 +5,12 @@ CPPFLAGS=-Wall -Wextra -Werror -Wshadow -pedantic -Ofast -std=gnu++17 -fomit-fra
 LIBS=-lopencv_core -lopencv_imgproc -lopencv_features2d -lopencv_highgui -lopencv_imgcodecs -lpthread
 CPPSOURCES=$(wildcard *.cpp)
 
-OBJECTS=$(CPPSOURCES:.cpp=.o)
-
 .PHONY : all
 all: $(CPPSOURCES) $(EXECUTABLE_NAME)
 
-$(EXECUTABLE_NAME) : $(OBJECTS)
-	$(CPP) $(CPPFLAGS) $(OBJECTS) $(PROFILE) -o $@ $(LIBS)
-
-%.o:%.cpp
-	$(CPP) -c $(INC) $(CPPFLAGS) $(PROFILE) $< -o $@
+$(EXECUTABLE_NAME) : $(CPPSOURCES)
+	$(CPP) $(CPPFLAGS) $(CPPSOURCES) $(PROFILE) -o $@ $(LIBS)
 
 .PHONY : clean
 clean:
-	rm -rf *.o $(EXECUTABLE_NAME)
+	rm -rf $(EXECUTABLE_NAME)
