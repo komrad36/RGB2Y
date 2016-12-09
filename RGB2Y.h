@@ -6,11 +6,12 @@
 *	kareem.omar@uah.edu
 *	https://github.com/komrad36
 *
-*	Last updated Oct 27, 2016
+*	Last updated Dec 9, 2016
 *******************************************************************/
 //
 // Fastest CPU (AVX/SSE) implementation of RGB to grayscale.
-// Roughly 2.5x to 3x faster than OpenCV's implementation.
+// Roughly 3x faster than OpenCV's implementation with AVX2, or 2x faster
+// than OpenCV's implementation if using SSE only.
 //
 // Converts an RGB color image to grayscale.
 //
@@ -22,12 +23,18 @@
 //
 // For even more speed see the CUDA version:
 // github.com/komrad36/CUDARGB2Y
-// 
+//
+// If you do not have AVX2, uncomment the #define below to route the code
+// through only SSE isntructions. NOTE THAT THIS IS ABOUT 50% SLOWER.
+// A processor with full AVX2 support is highly recommended.
+//
 // All functionality is contained in RGB2Y.h.
 // 'main.cpp' is a demo and test harness.
 //
 
 #pragma once
+
+//#define NO_AVX_PLEASE
 
 // Set your weights here.
 constexpr double B_WEIGHT = 0.114;
@@ -45,10 +52,40 @@ constexpr uint16_t R_WT = static_cast<uint16_t>(64.0 * R_WEIGHT + 0.5);
 #include <future>
 #include <immintrin.h>
 
+// 241
 template<const bool last_row_and_col, bool weight>
 void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uint8_t* const __restrict out) {
 	__m128i h3;
 	if (weight) {
+#ifdef NO_AVX_PLEASE
+		__m128i p1aL = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt))), _mm_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
+		__m128i p1aH = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 8))), _mm_setr_epi16(R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
+		__m128i p1bL = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18))), _mm_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
+		__m128i p1bH = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 26))), _mm_setr_epi16(R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
+		__m128i p2aL = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1))), _mm_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT));
+		__m128i p2aH = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 9))), _mm_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
+		__m128i p2bL = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 19))), _mm_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT));
+		__m128i p2bH = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 27))), _mm_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
+		__m128i p3aL = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 2))), _mm_setr_epi16(R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
+		__m128i p3aH = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 10))), _mm_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT));
+		__m128i p3bL = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 20))), _mm_setr_epi16(R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
+		__m128i p3bH = _mm_mullo_epi16(_mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 28))), _mm_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT));
+		__m128i sumaL = _mm_add_epi16(p3aL, _mm_add_epi16(p1aL, p2aL));
+		__m128i sumaH = _mm_add_epi16(p3aH, _mm_add_epi16(p1aH, p2aH));
+		__m128i sumbL = _mm_add_epi16(p3bL, _mm_add_epi16(p1bL, p2bL));
+		__m128i sumbH = _mm_add_epi16(p3bH, _mm_add_epi16(p1bH, p2bH));
+		__m128i sclaL = _mm_srli_epi16(sumaL, 6);
+		__m128i sclaH = _mm_srli_epi16(sumaH, 6);
+		__m128i sclbL = _mm_srli_epi16(sumbL, 6);
+		__m128i sclbH = _mm_srli_epi16(sumbH, 6);
+		__m128i shftaL = _mm_shuffle_epi8(sclaL, _mm_setr_epi8(0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+		__m128i shftaH = _mm_shuffle_epi8(sclaH, _mm_setr_epi8(-1, -1, -1, 18, 24, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+		__m128i shftbL = _mm_shuffle_epi8(sclbL, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1));
+		__m128i shftbH = _mm_shuffle_epi8(sclbH, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
+		__m128i accumL = _mm_or_si128(shftaL, shftbL);
+		__m128i accumH = _mm_or_si128(shftaH, shftbH);
+		h3 = _mm_blendv_epi8(accumL, accumH, _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+#else
 		__m256i p1a = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt))), _mm256_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
 		__m256i p1b = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18))), _mm256_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
 		__m256i p2a = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1))), _mm256_setr_epi16(G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT));
@@ -63,8 +100,38 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 		__m256i shftb = _mm256_shuffle_epi8(sclb, _mm256_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
 		__m256i accum = _mm256_or_si256(shfta, shftb);
 		h3 = _mm_blendv_epi8(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1), _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+#endif
 	}
 	else {
+#ifdef NO_AVX_PLEASE
+		__m128i p1aL = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt)));
+		__m128i p1aH = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 8)));
+		__m128i p1bL = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18)));
+		__m128i p1bH = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 26)));
+		__m128i p2aL = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1)));
+		__m128i p2aH = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 9)));
+		__m128i p2bL = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 19)));
+		__m128i p2bH = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 27)));
+		__m128i p3aL = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 2)));
+		__m128i p3aH = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 10)));
+		__m128i p3bL = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 20)));
+		__m128i p3bH = _mm_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 28)));
+		__m128i sumaL = _mm_add_epi16(p3aL, _mm_add_epi16(p1aL, p2aL));
+		__m128i sumaH = _mm_add_epi16(p3aH, _mm_add_epi16(p1aH, p2aH));
+		__m128i sumbL = _mm_add_epi16(p3bL, _mm_add_epi16(p1bL, p2bL));
+		__m128i sumbH = _mm_add_epi16(p3bH, _mm_add_epi16(p1bH, p2bH));
+		__m128i sclaL = _mm_srli_epi16(_mm_mullo_epi16(sumaL, _mm_set1_epi16(85)), 8);
+		__m128i sclaH = _mm_srli_epi16(_mm_mullo_epi16(sumaH, _mm_set1_epi16(85)), 8);
+		__m128i sclbL = _mm_srli_epi16(_mm_mullo_epi16(sumbL, _mm_set1_epi16(85)), 8);
+		__m128i sclbH = _mm_srli_epi16(_mm_mullo_epi16(sumbH, _mm_set1_epi16(85)), 8);
+		__m128i shftaL = _mm_shuffle_epi8(sclaL, _mm_setr_epi8(0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+		__m128i shftaH = _mm_shuffle_epi8(sclaH, _mm_setr_epi8(-1, -1, -1, 18, 24, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+		__m128i shftbL = _mm_shuffle_epi8(sclbL, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1));
+		__m128i shftbH = _mm_shuffle_epi8(sclbH, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
+		__m128i accumL = _mm_or_si128(shftaL, shftbL);
+		__m128i accumH = _mm_or_si128(shftaH, shftbH);
+		h3 = _mm_blendv_epi8(accumL, accumH, _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+#else
 		__m256i p1a = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt)));
 		__m256i p1b = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18)));
 		__m256i p2a = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 1)));
@@ -79,6 +146,7 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 		__m256i shftb = _mm256_shuffle_epi8(sclb, _mm256_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
 		__m256i accum = _mm256_or_si256(shfta, shftb);
 		h3 = _mm_blendv_epi8(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1), _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+#endif
 	}
 	if (last_row_and_col) {
 		switch (cols_minus_j) {
