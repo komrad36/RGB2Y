@@ -151,29 +151,29 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 	if (last_row_and_col) {
 		switch (cols_minus_j) {
 		case 12:
-			out[11] = _mm_extract_epi8(h3, 11);
+			out[11] = static_cast<uint8_t>(_mm_extract_epi8(h3, 11));
 		case 11:
-			out[10] = _mm_extract_epi8(h3, 10);
+			out[10] = static_cast<uint8_t>(_mm_extract_epi8(h3, 10));
 		case 10:
-			out[9] = _mm_extract_epi8(h3, 9);
+			out[9] = static_cast<uint8_t>(_mm_extract_epi8(h3, 9));
 		case 9:
-			out[8] = _mm_extract_epi8(h3, 8);
+			out[8] = static_cast<uint8_t>(_mm_extract_epi8(h3, 8));
 		case 8:
-			out[7] = _mm_extract_epi8(h3, 7);
+			out[7] = static_cast<uint8_t>(_mm_extract_epi8(h3, 7));
 		case 7:
-			out[6] = _mm_extract_epi8(h3, 6);
+			out[6] = static_cast<uint8_t>(_mm_extract_epi8(h3, 6));
 		case 6:
-			out[5] = _mm_extract_epi8(h3, 5);
+			out[5] = static_cast<uint8_t>(_mm_extract_epi8(h3, 5));
 		case 5:
-			out[4] = _mm_extract_epi8(h3, 4);
+			out[4] = static_cast<uint8_t>(_mm_extract_epi8(h3, 4));
 		case 4:
-			out[3] = _mm_extract_epi8(h3, 3);
+			out[3] = static_cast<uint8_t>(_mm_extract_epi8(h3, 3));
 		case 3:
-			out[2] = _mm_extract_epi8(h3, 2);
+			out[2] = static_cast<uint8_t>(_mm_extract_epi8(h3, 2));
 		case 2:
-			out[1] = _mm_extract_epi8(h3, 1);
+			out[1] = static_cast<uint8_t>(_mm_extract_epi8(h3, 1));
 		case 1:
-			out[0] = _mm_extract_epi8(h3, 0);
+			out[0] = static_cast<uint8_t>(_mm_extract_epi8(h3, 0));
 		}
 	}
 	else {
