@@ -69,10 +69,10 @@ void RGB2Y_ref(const uint8_t* __restrict const data, const int32_t cols, const i
 int main() {
 	// ------------- Configuration ------------
 	constexpr bool display_image = false;
-	constexpr auto warmups = 200;
-	constexpr auto runs = 500;
+	constexpr auto warmups = 500;
+	constexpr auto runs = 2000;
 	constexpr bool multithread = true;
-	constexpr bool weighted_averaging = true;
+	constexpr bool weighted_averaging = false;
 	constexpr char name[] = "test.jpg";
 	// --------------------------------
 
@@ -128,14 +128,17 @@ int main() {
 
 	// ------------- Verification ------------
 	int i = 0;
+	size_t count = 0;
 	for (; i < image.cols*image.rows; ++i) {
 		if (abs(newimage[i] - (weighted_averaging ? newimage_cv.data[i] : refresult[i])) > 1) {
-			std::cerr << "ERROR! One or more pixels disagree!" << std::endl;
-			std::cerr << i << ": got " << +newimage[i] << ", should be " << (weighted_averaging ? +newimage_cv.data[i] : +refresult[i]) << std::endl;
-			break;
+			//std::cerr << "ERROR! One or more pixels disagree!" << std::endl;
+			//std::cerr << i << ": got " << +newimage[i] << ", should be " << (weighted_averaging ? +newimage_cv.data[i] : +refresult[i]) << std::endl;
+			++count;
+			//break;
 		}
 	}
-	if (i == image.cols*image.rows) std::cout << "All pixels agree! Test valid." << std::endl << std::endl;
+	//if (i == image.cols*image.rows) std::cout << "All pixels agree! Test valid." << std::endl << std::endl;
+	/*else */std::cout << count << " pixels disagree." << std::endl;
 	// --------------------------------
 
 
