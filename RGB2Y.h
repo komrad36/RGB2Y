@@ -84,7 +84,7 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 		__m128i shftbH = _mm_shuffle_epi8(sclbH, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
 		__m128i accumL = _mm_or_si128(shftaL, shftbL);
 		__m128i accumH = _mm_or_si128(shftaH, shftbH);
-		h3 = _mm_blendv_epi8(accumL, accumH, _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+		h3 = _mm_or_si128(accumL, accumH);
 #else
 		__m256i p1a = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt))), _mm256_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
 		__m256i p1b = _mm256_mullo_epi16(_mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18))), _mm256_setr_epi16(B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT, G_WT, R_WT, B_WT));
@@ -99,7 +99,7 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 		__m256i shfta = _mm256_shuffle_epi8(scla, _mm256_setr_epi8(0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
 		__m256i shftb = _mm256_shuffle_epi8(sclb, _mm256_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
 		__m256i accum = _mm256_or_si256(shfta, shftb);
-		h3 = _mm_blendv_epi8(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1), _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+		h3 = _mm_or_si128(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1));
 #endif
 	}
 	else {
@@ -130,7 +130,7 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 		__m128i shftbH = _mm_shuffle_epi8(sclbH, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
 		__m128i accumL = _mm_or_si128(shftaL, shftbL);
 		__m128i accumH = _mm_or_si128(shftaH, shftbH);
-		h3 = _mm_blendv_epi8(accumL, accumH, _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+		h3 = _mm_or_si128(accumL, accumH);
 #else
 		__m256i p1a = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt)));
 		__m256i p1b = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pt + 18)));
@@ -145,7 +145,7 @@ void process(const uint8_t* __restrict const pt, const int32_t cols_minus_j, uin
 		__m256i shfta = _mm256_shuffle_epi8(scla, _mm256_setr_epi8(0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
 		__m256i shftb = _mm256_shuffle_epi8(sclb, _mm256_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 6, 12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 18, 24, 30, -1, -1, -1, -1));
 		__m256i accum = _mm256_or_si256(shfta, shftb);
-		h3 = _mm_blendv_epi8(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1), _mm_setr_epi8(0, 0, 0, -1, -1, -1, 0, 0, 0, -1, -1, -1, 1, 1, 1, 1));
+		h3 = _mm_or_si128(_mm256_castsi256_si128(accum), _mm256_extracti128_si256(accum, 1));
 #endif
 	}
 	if (last_row_and_col) {
