@@ -65,7 +65,7 @@ int main() {
 	constexpr bool weighted_averaging = true;
 
 	constexpr char name[] = "test.jpg";
-	constexpr bool generate_test_pixels = true;
+	constexpr bool generate_test_pixels = false;
 	// --------------------------------
 
 
